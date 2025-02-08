@@ -25,8 +25,17 @@ class DataSelectionFrame(ctk.CTkFrame):
         for name, desc in preset_datasets:
             self.create_dataset_frame(name, desc)
             
-        # Custom dataset upload section
         self.setup_upload_section()
+        
+        self.nav_frame = ctk.CTkFrame(self)
+        self.nav_frame.pack(fill=tk.X, pady=(10, 0), padx=20)
+        
+        self.next_button = ctk.CTkButton(
+            self.nav_frame,
+            text="Next: Prepare Data →",
+            command=lambda: self.app.show_frame('data_preparation')
+        )
+        self.next_button.pack(side=tk.RIGHT)
         
     def create_dataset_frame(self, name, desc):
         dataset_frame = ctk.CTkFrame(self)
@@ -66,4 +75,4 @@ class DataSelectionFrame(ctk.CTkFrame):
         )
         if filename:
             print(f"Selected file: {filename}")
-            self.app.show_frame('data_preparation')
+            self.app.show_frame('data_preparation', filename)

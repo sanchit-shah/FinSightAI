@@ -8,8 +8,9 @@ import queue
 import time
 
 class TrainingFrame(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, app):
         super().__init__(parent)
+        self.app = app
         self.is_training = False
         self.training_thread = None
         self.data_queue = queue.Queue()
@@ -33,6 +34,24 @@ class TrainingFrame(ctk.CTkFrame):
         
         self.plot_frame = ctk.CTkFrame(self)
         self.plot_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        # Navigation frame at the bottom
+        self.nav_frame = ctk.CTkFrame(self)
+        self.nav_frame.pack(fill=tk.X, pady=(10, 0), padx=20)
+        
+        self.back_button = ctk.CTkButton(
+            self.nav_frame,
+            text="← Back to Data Preparation",
+            command=lambda: self.app.show_frame('data_preparation')
+        )
+        self.back_button.pack(side=tk.LEFT)
+        
+        self.next_button = ctk.CTkButton(
+            self.nav_frame,
+            text="Next: Evaluate Results →",
+            command=lambda: self.app.show_frame('evaluation')
+        )
+        self.next_button.pack(side=tk.RIGHT)
         
     def setup_plot(self):
         self.fig, self.ax1 = plt.subplots(figsize=(6, 4))

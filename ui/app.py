@@ -10,7 +10,7 @@ from ui.export import ExportFrame
 class MLPlatformApp:
     def __init__(self):
         self.root = ctk.CTk()
-        self.root.title("ML Model Builder")
+        self.root.title("FinSightAI")
         self.root.geometry("1200x800")
         
         ctk.set_appearance_mode("light")
@@ -27,20 +27,25 @@ class MLPlatformApp:
         
         self.frames = {
             'data_selection': DataSelectionFrame(self.content_area, self),
-            'data_preparation': DataPreparationFrame(self.content_area),
-            'training': TrainingFrame(self.content_area),
-            'evaluation': EvaluationFrame(self.content_area),
-            'export': ExportFrame(self.content_area)
+            'data_preparation': DataPreparationFrame(self.content_area, self),
+            'training': TrainingFrame(self.content_area, self),
+            'evaluation': EvaluationFrame(self.content_area, self),
+            'export': ExportFrame(self.content_area, self)
         }
         
         self.sidebar = Sidebar(self.main_container, self)
         
         self.show_frame('data_selection')
         
-    def show_frame(self, frame_name):
+    def show_frame(self, frame_name, file_path=None):
         for frame in self.frames.values():
             frame.pack_forget()
-        self.frames[frame_name].pack(fill=tk.BOTH, expand=True)
+        
+        frame = self.frames[frame_name]
+        if frame_name == 'data_preparation' and file_path:
+            frame.load_data(file_path)
+        
+        frame.pack(fill=tk.BOTH, expand=True)
         
     def run(self):
         self.root.mainloop()

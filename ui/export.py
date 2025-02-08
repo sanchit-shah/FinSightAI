@@ -1,10 +1,12 @@
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog
+from CTkMessagebox import CTkMessagebox
 
 class ExportFrame(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, app):
         super().__init__(parent)
+        self.app = app
         self.setup_frame()
         
     def setup_frame(self):
@@ -39,10 +41,26 @@ class ExportFrame(ctk.CTkFrame):
             command=self.export_model
         ).pack(pady=20)
         
+        self.nav_frame = ctk.CTkFrame(self)
+        self.nav_frame.pack(fill=tk.X, pady=(10, 0), padx=20)
+        
+        self.back_button = ctk.CTkButton(
+            self.nav_frame,
+            text="← Back to Evaluation",
+            command=lambda: self.app.show_frame('evaluation')
+        )
+        self.back_button.pack(side=tk.LEFT)
+        
+        self.finish_button = ctk.CTkButton(
+            self.nav_frame,
+            text="Finish",
+            command=self.on_finish
+        )
+        self.finish_button.pack(side=tk.RIGHT)
+        
     def export_model(self):
         export_type = self.export_var.get()
         
-        # Get save location from user
         file_types = []
         if export_type in ["both", "model"]:
             file_types.append(("Model Files", "*.h5"))
@@ -84,3 +102,14 @@ class ExportFrame(ctk.CTkFrame):
     def _save_code(self, path):
         # implement actual code generation logic
         print(f"Saving code to: {path}")
+
+    def on_finish(self):
+        confirm = CTkMessagebox(
+            title="Finish",
+            message="Are you sure you want to finish?",
+            icon="question",
+            option_1="Yes",
+            option_2="No"
+        )
+        if confirm.get() == "Yes":
+            self.app.root.quit()
