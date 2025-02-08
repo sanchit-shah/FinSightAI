@@ -50,6 +50,24 @@ class DataPreparationFrame(ctk.CTkFrame):
         )
         self.delete_btn.pack(side=tk.LEFT, padx=5)
         
+        self.target_frame = ctk.CTkFrame(self.main_container)
+        self.target_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ctk.CTkLabel(
+            self.target_frame,
+            text="Select Target Column (What you want to predict):",
+            font=("Arial", 14, "bold")
+        ).pack(side=tk.LEFT, padx=5)
+        
+        self.target_var = tk.StringVar()
+        self.target_dropdown = ctk.CTkOptionMenu(
+            self.target_frame,
+            variable=self.target_var,
+            values=[],
+            command=self.on_target_selected
+        )
+        self.target_dropdown.pack(side=tk.LEFT, padx=5)
+        
         preview_label = ctk.CTkLabel(
             self.main_container,
             text="Data Preview:",
@@ -91,6 +109,7 @@ class DataPreparationFrame(ctk.CTkFrame):
         self.df = pd.read_csv(file_path)
         self.process_null_values()
         self.update_column_dropdown()
+        self.update_target_dropdown()
         self.display_data_preview()
         
     def process_null_values(self):
@@ -102,11 +121,13 @@ class DataPreparationFrame(ctk.CTkFrame):
             
             self.update_statistics(null_values_removed=null_counts)
             
-    def update_statistics(self, null_values_removed=0, column_removed=None):
+    def update_statistics(self, null_values_removed=0, column_removed=None, target_column=None):
         stats_text = f"Data Statistics:\n"
         stats_text += f"- {null_values_removed} null values detected and removed\n"
         if column_removed:
             stats_text += f"- Column '{column_removed}' removed\n"
+        if target_column:
+            stats_text += f"- Target column set to: '{target_column}'\n"
         stats_text += f"- {len(self.df)} rows remaining\n"
         stats_text += f"- {len(self.df.columns)} columns"
         
@@ -118,10 +139,28 @@ class DataPreparationFrame(ctk.CTkFrame):
             if len(self.df.columns) > 0:
                 self.column_var.set(self.df.columns[0])
                 
+    def update_target_dropdown(self):
+        if self.df is not None:
+            self.target_dropdown.configure(values=list(self.df.columns))
+            if len(self.df.columns) > 0:
+                self.target_var.set("Select target column")
+                
+    def on_target_selected(self, choice):
+        if choice != "Select target column":
+            self.update_statistics(target_column=choice)
+            
     def delete_column(self):
         if self.df is not None and self.column_var.get():
             column = self.column_var.get()
             
+            if column == self.target_var.get():
+                CTkMessagebox(
+                    title="Error",
+                    message="Cannot delete the target column!",
+                    icon="cancel"
+                )
+                return
+                
             confirm = CTkMessagebox(
                 title="Confirm Deletion",
                 message=f"Are you sure you want to delete the column '{column}'?",
