@@ -16,6 +16,8 @@ class MLPlatformApp:
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
         
+        self.task_type = None
+        
         self.setup_ui()
         
     def setup_ui(self):

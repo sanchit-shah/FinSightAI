@@ -63,7 +63,7 @@ class DataPreparationFrame(ctk.CTkFrame):
         self.target_dropdown = ctk.CTkOptionMenu(
             self.target_frame,
             variable=self.target_var,
-            values=[],
+            values=["Select"],
             command=self.on_target_selected
         )
         self.target_dropdown.pack(side=tk.LEFT, padx=5)
@@ -101,7 +101,8 @@ class DataPreparationFrame(ctk.CTkFrame):
         self.next_button = ctk.CTkButton(
             self.nav_frame,
             text="Next: Train Model →",
-            command=lambda: self.app.show_frame('training')
+            command=lambda: self.app.show_frame('training'),
+            state="disabled"
         )
         self.next_button.pack(side=tk.RIGHT)
         
@@ -141,19 +142,21 @@ class DataPreparationFrame(ctk.CTkFrame):
                 
     def update_target_dropdown(self):
         if self.df is not None:
-            self.target_dropdown.configure(values=list(self.df.columns))
-            if len(self.df.columns) > 0:
-                self.target_var.set("Select target column")
-                
+            self.target_dropdown.configure(values=["Select"] + list(self.df.columns))
+            self.target_var.set("Select")
+            
     def on_target_selected(self, choice):
-        if choice != "Select target column":
+        if choice != "Select":
             self.update_statistics(target_column=choice)
+            self.next_button.configure(state="normal")
+        else:
+            self.next_button.configure(state="disabled")
             
     def delete_column(self):
         if self.df is not None and self.column_var.get():
             column = self.column_var.get()
             
-            if column == self.target_var.get():
+            if column == self.target_var.get() and self.target_var.get() != "Select":
                 CTkMessagebox(
                     title="Error",
                     message="Cannot delete the target column!",
@@ -173,6 +176,7 @@ class DataPreparationFrame(ctk.CTkFrame):
             if response == "Yes":
                 self.df.drop(columns=[column], inplace=True)
                 self.update_column_dropdown()
+                self.update_target_dropdown()
                 self.display_data_preview()
                 self.update_statistics(column_removed=column)
             
