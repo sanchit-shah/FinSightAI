@@ -123,17 +123,43 @@ class DataPreparationFrame(ctk.CTkFrame):
             self.update_statistics(null_values_removed=null_counts)
             
     def update_statistics(self, null_values_removed=0, column_removed=None, target_column=None):
-        stats_text = f"Data Statistics:\n"
-        stats_text += f"- {null_values_removed} null values detected and removed\n"
-        if column_removed:
-            stats_text += f"- Column '{column_removed}' removed\n"
-        if target_column:
-            stats_text += f"- Target column set to: '{target_column}'\n"
-        stats_text += f"- {len(self.df)} rows remaining\n"
-        stats_text += f"- {len(self.df.columns)} columns"
+        stats_text = "Data Statistics:\n\n"
         
-        self.info_label.configure(text=stats_text)
+        # Always show null values info
+        if null_values_removed > 0:
+            stats_text += f"• {null_values_removed} rows removed due to missing values\n"
+        else:
+            stats_text += "• No rows removed due to missing values\n"
+        
+        if self.df is not None:
+            stats_text += f"• {len(self.df)} rows remaining in dataset\n"
             
+            # Check for categorical variables
+            categorical_columns = self.df.select_dtypes(include=["object"]).columns
+            if len(categorical_columns) > 0:
+                stats_text += f"• {len(categorical_columns)} categorical columns will be encoded\n"
+            else:
+                stats_text += "• No categorical columns to encode\n"
+            
+            # Add normalization message
+            stats_text += "• Data will be normalized and scaled appropriately prior to running the model\n"
+            
+            if target_column and target_column != "Select":
+                # Check for class imbalance
+                value_counts = self.df[target_column].value_counts()
+                ratio = value_counts.min() / value_counts.max()
+                
+                if ratio < 0.3:  # If minority class is less than 30% of majority class
+                    stats_text += f"• Dataset is imbalanced (ratio: {ratio:.2f})\n"
+                    stats_text += "• SMOTE will be used to balance the dataset\n"
+                else:
+                    stats_text += "• Dataset is relatively balanced\n"
+        
+        if column_removed:
+            stats_text += f"• Column '{column_removed}' has been removed\n"
+            
+        self.info_label.configure(text=stats_text)
+
     def update_column_dropdown(self):
         if self.df is not None:
             self.column_dropdown.configure(values=list(self.df.columns))
