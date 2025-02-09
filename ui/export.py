@@ -19,12 +19,11 @@ class ExportFrame(ctk.CTkFrame):
             font=("Arial", 16, "bold")
         ).pack(pady=(0, 10))
         
-        self.export_var = tk.StringVar(value="both")
+        self.export_var = tk.StringVar(value="model")
         
         options = [
-            ("Export both model file and Python code", "both"),
-            ("Export model file only", "model"),
-            ("Export Python code only", "code")
+            ("Export model file (.pkl)", "model"),
+            ("Export Python code (.py)", "code")
         ]
         
         for text, value in options:
@@ -61,25 +60,21 @@ class ExportFrame(ctk.CTkFrame):
     def export_model(self):
         export_type = self.export_var.get()
         
-        file_types = []
-        if export_type in ["both", "model"]:
-            file_types.append(("Model Files", "*.h5"))
-        if export_type in ["both", "code"]:
-            file_types.append(("Python Files", "*.py"))
-        if not file_types:
-            file_types = [("All Files", "*.*")]
+        if export_type == "model":
+            file_types = [("Model Files", "*.pkl")]
+            default_ext = ".pkl"
+        else:
+            file_types = [("Python Files", "*.py")]
+            default_ext = ".py"
             
         save_path = filedialog.asksaveasfilename(
-            defaultextension=".h5" if export_type == "model" else ".py",
+            defaultextension=default_ext,
             filetypes=file_types
         )
         
         if save_path:
             try:
-                if export_type == "both":
-                    self._save_model(save_path + ".h5")
-                    self._save_code(save_path + ".py")
-                elif export_type == "model":
+                if export_type == "model":
                     self._save_model(save_path)
                 else:
                     self._save_code(save_path)
@@ -96,12 +91,76 @@ class ExportFrame(ctk.CTkFrame):
                 )
                 
     def _save_model(self, path):
-        # implement actual model saving logic
-        print(f"Saving model to: {path}")
+        import pickle
+        model = self.app.frames['training'].model
+        if model is None:
+            raise ValueError("No trained model found. Please complete training first.")
+            
+        if not path.endswith('.pkl'):
+            path = path.replace('.h5', '.pkl')
+            
+        with open(path, 'wb') as f:
+            pickle.dump(model, f)
         
     def _save_code(self, path):
-        # implement actual code generation logic
-        print(f"Saving code to: {path}")
+        data_file = self.app.frames['data_selection'].selected_file
+        target_column = self.app.frames['data_preparation'].target_var.get()
+        task_type = self.app.task_type
+        
+        code_template = f"""import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from imblearn.over_sampling import SMOTE
+
+# Load and prepare data
+df = pd.read_csv('{data_file}')  # Updated with actual file path
+target_column = '{target_column}'  # Updated with selected target column
+task_type = '{task_type}'  # Updated with selected task type
+
+# Encode categorical variables
+categorical_columns = df.select_dtypes(include=["object"]).columns
+for col in categorical_columns:
+    le = LabelEncoder()
+    df[col] = le.fit_transform(df[col])
+
+# Split features and target
+X = df.drop(columns=[target_column])
+y = df[target_column]
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Apply SMOTE for fraud detection
+if task_type == "fraud_detection":
+    smote = SMOTE(random_state=42)
+    X_train, y_train = smote.fit_resample(X_train, y_train)
+
+# Scale features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Initialize and train model
+model = RandomForestClassifier(
+    n_estimators=50 if task_type == "fraud_detection" else 100,
+    max_depth=10 if task_type == "fraud_detection" else 15,
+    random_state=42,
+    class_weight="balanced"
+)
+
+# Train the model
+model.fit(X_train, y_train)
+
+# Save the trained model
+import pickle
+with open('model.pkl', 'wb') as f:
+    pickle.dump(model, f)
+"""
+        
+        with open(path, 'w') as f:
+            f.write(code_template)
 
     def on_finish(self):
         confirm = CTkMessagebox(

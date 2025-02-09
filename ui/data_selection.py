@@ -8,95 +8,96 @@ class DataSelectionFrame(ctk.CTkFrame):
         super().__init__(parent)
         self.app = app
         self.file_selected = False
+        self.selected_file = None
         self.setup_frame()
         
     def setup_frame(self):
-        presets_label = ctk.CTkLabel(
-            self, 
-            text="Preset Datasets",
-            font=("Arial", 16, "bold")
-        )
-        presets_label.pack(pady=(0, 10))
+        self.grid_columnconfigure(0, weight=3)
+        self.grid_columnconfigure(1, weight=1)
         
-        preset_datasets = [
-            ("Credit Risk Dataset", "Historical credit data with default rates"),
-            ("Fraud Detection Dataset", "Transaction data with fraud labels"),
-            ("Loan Approval Dataset", "Loan application data with approval decisions")
+        text_frame = ctk.CTkFrame(self)
+        text_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        
+        ctk.CTkLabel(
+            text_frame,
+            text="Welcome to FinSightAI",
+            font=("Arial", 32, "bold")
+        ).pack(pady=(20, 30), anchor="w")
+        
+        features = [
+            "Complete preprocessing for hundreds of thousands of rows of data in a matter of seconds.",
+            "Train custom built models with ease and high accuracy.",
+            "Export your model and scale it even furthur."
         ]
         
-        for name, desc in preset_datasets:
-            self.create_dataset_frame(name, desc)
+        for feature in features:
+            feature_frame = ctk.CTkFrame(text_frame)
+            feature_frame.pack(fill=tk.X, pady=10, padx=20)
             
-        self.setup_upload_section()
+            ctk.CTkLabel(
+                feature_frame,
+                text="•",
+                font=("Arial", 18)
+            ).pack(side=tk.LEFT, padx=(0, 10))
+            
+            ctk.CTkLabel(
+                feature_frame,
+                text=feature,
+                font=("Arial", 16),
+                wraplength=400,
+                justify="left"
+            ).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        upload_frame = ctk.CTkFrame(self)
+        upload_frame.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+        
+        ctk.CTkLabel(
+            upload_frame,
+            text="Upload Dataset",
+            font=("Arial", 24, "bold")
+        ).pack(pady=(30, 20))
+        
+        ctk.CTkLabel(
+            upload_frame,
+            text="Select your CSV file to begin",
+            font=("Arial", 14)
+        ).pack(pady=(0, 20))
+        
+        ctk.CTkButton(
+            upload_frame,
+            text="Browse Files",
+            command=self.browse_files,
+            height=40,
+            font=("Arial", 14)
+        ).pack(pady=20)
         
         self.nav_frame = ctk.CTkFrame(self)
-        self.nav_frame.pack(fill=tk.X, pady=(10, 0), padx=20)
+        self.nav_frame.grid(row=1, column=0, columnspan=2, padx=20, pady=(0, 20), sticky="ew")
         
         self.next_button = ctk.CTkButton(
             self.nav_frame,
             text="Next: Prepare Data →",
             command=lambda: self.app.show_frame('data_preparation'),
-            state="disabled"  # Initially disabled
+            state="disabled",
+            font=("Arial", 14)
         )
         self.next_button.pack(side=tk.RIGHT)
-        
-    def create_dataset_frame(self, name, desc):
-        dataset_frame = ctk.CTkFrame(self)
-        dataset_frame.pack(fill=tk.X, pady=5, padx=20)
-        
-        ctk.CTkLabel(dataset_frame, text=name, font=("Arial", 14, "bold")).pack(anchor="w")
-        ctk.CTkLabel(dataset_frame, text=desc).pack(anchor="w")
-        ctk.CTkButton(
-            dataset_frame,
-            text="Select",
-            command=lambda: self.select_preset_dataset(name)
-        ).pack(pady=5)
-        
-    def setup_upload_section(self):
-        upload_frame = ctk.CTkFrame(self)
-        upload_frame.pack(fill=tk.X, pady=20, padx=20)
-        
-        ctk.CTkLabel(
-            upload_frame,
-            text="Upload Custom Dataset",
-            font=("Arial", 14, "bold")
-        ).pack(pady=5)
-        
-        ctk.CTkButton(
-            upload_frame,
-            text="Browse Files",
-            command=self.browse_files
-        ).pack(pady=10)
-        
-    def select_preset_dataset(self, dataset_name):
-        if dataset_name == "Credit Risk Dataset":
-            self.app.task_type = "credit_risk"
-        elif dataset_name == "Fraud Detection Dataset":
-            self.app.task_type = "fraud_detection"
-        elif dataset_name == "Loan Approval Dataset":
-            self.app.task_type = "credit_risk"
-            
-        print(f"Selected dataset: {dataset_name}")
-        self.file_selected = True
-        self.next_button.configure(state="normal")
-        self.app.show_frame('data_preparation')
         
     def browse_files(self):
         filename = filedialog.askopenfilename(
             filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
         )
         if filename:
+            self.selected_file = filename
             self.select_task_type(filename)
     
     def select_task_type(self, filename):
-        # Create a new dialog window
         dialog = ctk.CTkToplevel(self)
         dialog.title("Select Task Type")
         dialog.geometry("300x200")
-        dialog.transient(self)  # Make dialog modal
+        dialog.transient(self)
         dialog.grab_set()
         
-        # Center the dialog
         dialog.update_idletasks()
         x = self.winfo_rootx() + (self.winfo_width() // 2) - (dialog.winfo_width() // 2)
         y = self.winfo_rooty() + (self.winfo_height() // 2) - (dialog.winfo_height() // 2)
@@ -104,14 +105,12 @@ class DataSelectionFrame(ctk.CTkFrame):
         
         task_type = tk.StringVar(value="")
         
-        # Label
         ctk.CTkLabel(
             dialog,
             text="Please select the task type:",
             font=("Arial", 14, "bold")
         ).pack(pady=(20, 10))
         
-        # Radio buttons
         ctk.CTkRadioButton(
             dialog,
             text="Credit Risk",
@@ -140,7 +139,6 @@ class DataSelectionFrame(ctk.CTkFrame):
                     icon="cancel"
                 )
         
-        # Confirm button
         ctk.CTkButton(
             dialog,
             text="Confirm",

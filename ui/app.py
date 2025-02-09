@@ -48,6 +48,7 @@ class MLPlatformApp:
             frame.load_data(file_path)
         
         frame.pack(fill=tk.BOTH, expand=True)
+        self.sidebar.set_active_step(frame_name)
         
     def run(self):
         self.root.mainloop()

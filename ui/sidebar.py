@@ -10,8 +10,12 @@ class Sidebar(ctk.CTkFrame):
         self.setup_sidebar()
         
     def setup_sidebar(self):
-        steps_label = ctk.CTkLabel(self, text="Build Steps", font=("Arial", 16, "bold"))
-        steps_label.pack(pady=(0, 10), padx=10)
+        steps_label = ctk.CTkLabel(
+            self, 
+            text="FinSightAI", 
+            font=("Inter", 18, "bold")
+        )
+        steps_label.pack(pady=(0, 15), padx=10)
         
         steps = [
             ("Select Data", 'data_selection'),
@@ -21,21 +25,57 @@ class Sidebar(ctk.CTkFrame):
             ("Export Model", 'export')
         ]
         
-        self.step_buttons = {}  # Store buttons for later access
+        self.step_labels = {}
         
         for step_text, frame_name in steps:
-            btn = ctk.CTkButton(
-                self, 
-                text=step_text, 
-                command=lambda f=frame_name: self.try_navigate(f)
-            )
-            btn.pack(pady=5, padx=10, fill=tk.X)
-            self.step_buttons[frame_name] = btn
+            step_frame = ctk.CTkFrame(self, fg_color="transparent")
+            step_frame.pack(pady=5, padx=10, fill=tk.X)
             
-        # Initially disable all but first step
-        for frame_name in self.step_buttons:
-            if frame_name != 'data_selection':
-                self.step_buttons[frame_name].configure(state="disabled")
+            indicator = ctk.CTkLabel(
+                step_frame, 
+                text="○",
+                font=("Inter", 16),
+                text_color="gray"
+            )
+            indicator.pack(side=tk.LEFT, padx=(5, 10))
+            
+            label = ctk.CTkLabel(
+                step_frame,
+                text=step_text,
+                font=("Inter", 14),
+                text_color="gray"
+            )
+            label.pack(side=tk.LEFT)
+            
+            self.step_labels[frame_name] = (indicator, label)
+            
+        self.set_active_step('data_selection')
+    
+    def set_active_step(self, current_step):
+        """Update the visual indication of the current step"""
+        steps_order = ['data_selection', 'data_preparation', 'training', 'evaluation', 'export']
+        current_index = steps_order.index(current_step)
+        
+        for i, step in enumerate(steps_order):
+            indicator, label = self.step_labels[step]
+            if i < current_index:
+                indicator.configure(text="●", text_color="green")
+                label.configure(text_color="green")
+            elif i == current_index:
+                indicator.configure(text="●", text_color="blue")
+                label.configure(text_color="blue")
+            else: 
+                indicator.configure(text="○", text_color="gray")
+                label.configure(text_color="gray")
+    
+    def enable_next_step(self, current_step):
+        """Update progress indicator when moving to next step"""
+        steps_order = ['data_selection', 'data_preparation', 'training', 'evaluation', 'export']
+        current_index = steps_order.index(current_step)
+        
+        if current_index + 1 < len(steps_order):
+            next_step = steps_order[current_index + 1]
+            self.set_active_step(next_step)
 
     def try_navigate(self, frame_name):
         error_msg = None
@@ -61,12 +101,3 @@ class Sidebar(ctk.CTkFrame):
             return
             
         self.app.show_frame(frame_name)
-
-    def enable_next_step(self, current_step):
-        """Enable the next step button after completing current step"""
-        steps_order = ['data_selection', 'data_preparation', 'training', 'evaluation', 'export']
-        current_index = steps_order.index(current_step)
-        
-        if current_index + 1 < len(steps_order):
-            next_step = steps_order[current_index + 1]
-            self.step_buttons[next_step].configure(state="normal")
