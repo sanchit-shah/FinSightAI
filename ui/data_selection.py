@@ -1,11 +1,13 @@
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog
+from CTkMessagebox import CTkMessagebox
 
 class DataSelectionFrame(ctk.CTkFrame):
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
+        self.file_selected = False
         self.setup_frame()
         
     def setup_frame(self):
@@ -33,7 +35,8 @@ class DataSelectionFrame(ctk.CTkFrame):
         self.next_button = ctk.CTkButton(
             self.nav_frame,
             text="Next: Prepare Data →",
-            command=lambda: self.app.show_frame('data_preparation')
+            command=lambda: self.app.show_frame('data_preparation'),
+            state="disabled"  # Initially disabled
         )
         self.next_button.pack(side=tk.RIGHT)
         
@@ -74,6 +77,8 @@ class DataSelectionFrame(ctk.CTkFrame):
             self.app.task_type = "credit_risk"
             
         print(f"Selected dataset: {dataset_name}")
+        self.file_selected = True
+        self.next_button.configure(state="normal")
         self.app.show_frame('data_preparation')
         
     def browse_files(self):
@@ -124,12 +129,15 @@ class DataSelectionFrame(ctk.CTkFrame):
         def confirm_selection():
             if task_type.get():
                 dialog.destroy()
-                self.app.task_type = task_type.get()  # Save task type in app
+                self.app.task_type = task_type.get()
+                self.file_selected = True
+                self.next_button.configure(state="normal")
                 self.app.show_frame('data_preparation', filename)
             else:
-                tk.messagebox.showerror(
-                    "Error",
-                    "Please select a task type before proceeding."
+                CTkMessagebox(
+                    title="Error",
+                    message="Please select a task type before proceeding.",
+                    icon="cancel"
                 )
         
         # Confirm button

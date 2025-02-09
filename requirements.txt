@@ -2,6 +2,7 @@ customtkinter==5.2.2
 numpy
 matplotlib
 pandas
+seaborn
 CTkMessagebox
 scikit-learn
 imblearn

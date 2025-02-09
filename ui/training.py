@@ -11,6 +11,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
 from imblearn.over_sampling import SMOTE
+from CTkMessagebox import CTkMessagebox
 
 class TrainingFrame(ctk.CTkFrame):
     def __init__(self, parent, app):
@@ -112,12 +113,11 @@ class TrainingFrame(ctk.CTkFrame):
             le = LabelEncoder()
             df[col] = le.fit_transform(df[col])
 
-        # Split data
+
         X = df.drop(columns=[target_column])
         y = df[target_column]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Handle imbalanced data for fraud detection
         if task_type == "fraud_detection":
             smote = SMOTE(random_state=42)
             X_train, y_train = smote.fit_resample(X_train, y_train)
@@ -225,22 +225,50 @@ class TrainingFrame(ctk.CTkFrame):
             previous_val_accuracy = epoch_metrics['val_accuracy']
             time.sleep(0.1)  # Prevent UI freezing
 
-        # Final evaluation
+        # Final evaluation and completion message
         if self.is_training:
-            self.status_label.configure(text="Training Complete! You can now proceed to evaluation.")
-            self.train_button.configure(text="Start Training")  # Reset button text
-            self.is_training = False
             y_test_pred = model.predict(X_test)
+            y_test_proba = model.predict_proba(X_test)[:, 1]
+            
+            # Calculate metrics
             precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_test_pred, average='binary')
-            roc_auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])
+            roc_auc = roc_auc_score(y_test, y_test_proba)
             
             final_metrics = {
                 'precision': precision,
                 'recall': recall,
                 'f1': f1,
-                'roc_auc': roc_auc
+                'roc_auc': roc_auc,
+                'y_test': y_test,
+                'y_pred': y_test_pred,
+                'y_proba': y_test_proba
             }
-            self.data_queue.put(('final_metrics', final_metrics))
+            
+            # Update evaluation frame with metrics
+            self.app.frames['evaluation'].update_metrics(final_metrics)
+            
+            # Show completion message
+            completion_reason = ""
+            if epochs_without_improvement >= early_stopping_patience:
+                completion_reason = f"Training stopped after {epoch + 1} epochs due to no improvement in validation accuracy for {early_stopping_patience} epochs."
+            else:
+                completion_reason = f"Training completed successfully after {epoch + 1} epochs."
+
+            CTkMessagebox(
+                title="Training Complete",
+                message=completion_reason,
+                icon="info"
+            )
+            
+            self.status_label.configure(text="Training Complete! You can now proceed to evaluation.")
+            self.train_button.configure(text="Start Training")
+            self.is_training = False
+            self.is_training_complete = True
+            self.next_button.configure(state="normal")
+            
+            # Enable next step in sidebar using the app's sidebar reference
+            if hasattr(self.app, 'sidebar'):
+                self.app.sidebar.enable_next_step('training')
 
     def update_plot(self):
         if self.is_training:
